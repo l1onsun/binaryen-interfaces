@@ -41,18 +41,21 @@ def cleanup_headers(headers):
     
     return "\n".join(lines), structs
 
+def header_location():
+    header_location = os.environ.get("BINARYEN_HEADER_PATH")
+    if header_location and os.path.isfile(header_location):
+        return header_location
+
+    for path in [
+        "/usr/include/binaryen-c.h",
+        "/usr/local/include/binaryen-c.h",
+    ]:
+        if os.path.isfile(path):
+            return path
+    raise FileNotFoundError("Can't find the header file")
 
 def parse_header_file():
-    header_location = "/usr/include/binaryen-c.h"
-    if not os.path.isfile(header_location):
-        header_location = "/usr/local/include/binaryen-c.h"
-        if not os.path.isfile(header_location):
-            raise FileNotFoundError("Can't find the header file")
-            # header_location = "binaryen-c-pp.h"
-            # usesysteminstalled = False
-
-    proc1 = subprocess.Popen(["cpp", "-nostdinc", "-E", "-P", header_location], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-    # proc2 = subprocess.Popen(["clang-format", "-style", "{BasedOnStyle: llvm, ColumnLimit: 0, AlignAfterOpenBracket: BlockIndent}"], stdin=proc1.stdout, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    proc1 = subprocess.Popen(["cpp", "-nostdinc", "-E", "-P", header_location()], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
     headerfile = proc1.stdout.read().decode("utf-8")
 
     if not headerfile:
